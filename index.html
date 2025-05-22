@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <title>JONKISTA Slot</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(#1c1c1c, #000);
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 3rem;
+      color: gold;
+      text-shadow: 0 0 15px gold, 0 0 25px orange;
+      margin-bottom: 10px;
+    }
+    .machine-frame {
+      margin: auto;
+      padding: 20px;
+      border: 10px solid gold;
+      border-radius: 25px;
+      background: #111;
+      box-shadow: 0 0 30px gold;
+      max-width: 400px;
+      position: relative;
+    }
+    .lights {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 15px;
+    }
+    .light {
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      box-shadow: 0 0 5px red;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .slot-machine {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .reel {
+      width: 80px;
+      height: 80px;
+      background: #222;
+      border: 4px solid #555;
+      border-radius: 15px;
+      font-size: 2.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 0 10px #000;
+    }
+    .panel {
+      margin-top: 15px;
+      font-size: 1.1rem;
+    }
+    .spin-button {
+      margin-top: 20px;
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      background: radial-gradient(circle at top left, orange, red);
+      color: #fff;
+      border: 4px solid gold;
+      border-radius: 50px;
+      box-shadow: 0 5px 15px #000, 0 0 15px orange;
+      cursor: pointer;
+    }
+    .spin-button:disabled {
+      background: #555;
+      color: #aaa;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      min-height: 40px;
+    }
+    @media (max-width: 480px) {
+      .reel {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+      }
+      .spin-button {
+        font-size: 1.2rem;
+        padding: 10px 25px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>JONKISTA</h1>
+  <div class="machine-frame">
+    <div class="lights">
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+    </div>
+    <div class="slot-machine">
+      <div class="reel" id="reel1">?</div>
+      <div class="reel" id="reel2">?</div>
+      <div class="reel" id="reel3">?</div>
+    </div>
+    <button class="spin-button" onclick="spin()" id="spinBtn">SUKTI</button>
+    <div class="panel" id="balance">Monetos: 100</div>
+    <div class="panel" id="xp">XP: 0 | Lygis: 1</div>
+    <div class="result" id="result"></div>
+  </div>
+  <audio id="spinSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+  <audio id="winSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+  <audio id="loseSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+  <script>
+    const symbols = ["🪙", "🔨", "🐷", "🛡️", "💰", "💎", "⭐", "☠️"];
+    const payouts = { "🪙": 10, "🔨": 15, "🐷": 25, "🛡️": 20, "💰": 30, "💎": 40, "⭐": 50, "☠️": 0 };
+    let coins = 100, xp = 0, level = 1, spins = 0;
+    function updateUI() {
+      document.getElementById("balance").textContent = `Monetos: ${coins}`;
+      document.getElementById("xp").textContent = `XP: ${xp} | Lygis: ${level}`;
+    }
+    function getRandomSymbol() {
+      return symbols[Math.floor(Math.random() * symbols.length)];
+    }
+    async function spin() {
+      if (coins < 5) return alert("Nepakanka monetų!");
+      coins -= 5; xp += 5; spins++;
+      if (xp >= level * 100) { level++; xp = 0; }
+      updateUI();
+      document.getElementById("result").textContent = "Sukasi...";
+      document.getElementById("spinBtn").disabled = true;
+      document.getElementById("spinSound").play();
+      const reels = [reel1, reel2, reel3];
+      for (let t = 0; t < 10; t++) {
+        for (let r of reels) r.textContent = getRandomSymbol();
+        await new Promise(res => setTimeout(res, 100));
+      }
+      const results = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+      reels.forEach((r, i) => r.textContent = results[i]);
+      let resultText = "Pralaimėjai.";
+      if (results[0] === results[1] && results[1] === results[2]) {
+        const prize = payouts[results[0]];
+        coins += prize;
+        resultText = `Laimėjai ${prize} monetų su 3 ${results[0]}!`;
+        document.getElementById("winSound").play();
+      } else {
+        document.getElementById("loseSound").play();
+      }
+      if (spins % 10 === 0) {
+        let bonus = Math.floor(Math.random() * 50) + 10;
+        coins += bonus;
+        resultText += ` Premija! +${bonus} monetų.`;
+      }
+      document.getElementById("result").textContent = resultText;
+      updateUI();
+      document.getElementById("spinBtn").disabled = false;
+    }
+    updateUI();
+  </script>
+</body>
+</html>
